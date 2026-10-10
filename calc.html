@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Macro & Focus Stacking Calculator</title>
+    <style>
+        :root {
+            --bg-color: #12181f;
+            --card-bg: #1e2630;
+            --accent-color: #00d2ff;
+            --accent-hover: #009ec3;
+            --text-main: #f0f4f8;
+            --text-sub: #9fb3c8;
+            --border-color: #2a3645;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 850px;
+            width: 100%;
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .lang-switch {
+            display: flex;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 3px;
+        }
+
+        .lang-btn {
+            background: none;
+            border: none;
+            color: var(--text-sub);
+            padding: 6px 14px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .lang-btn.active {
+            background-color: var(--accent-color);
+            color: #000;
+        }
+
+        h1 {
+            color: var(--accent-color);
+            margin: 0;
+            font-size: 1.7rem;
+        }
+
+        .subtitle {
+            color: var(--text-sub);
+            font-size: 0.9rem;
+            margin-top: 4px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .card-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--accent-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            margin-bottom: 5px;
+        }
+
+        select, input[type="range"] {
+            background-color: #151c24;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        select:focus {
+            border-color: var(--accent-color);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            text-align: center;
+        }
+
+        .result-box {
+            background-color: #151c24;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .result-box.highlight {
+            border-color: var(--accent-color);
+            background-color: rgba(0, 210, 255, 0.05);
+        }
+
+        .result-value {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-top: 4px;
+        }
+
+        .result-label {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stack-visualizer {
+            margin-top: 15px;
+            background: #151c24;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .layers-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 10px;
+            height: 170px;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            background: #0d1117;
+            border-radius: 6px;
+            padding: 10px;
+        }
+
+        .layer {
+            height: 12px;
+            border-radius: 3px;
+            background: linear-gradient(90deg, transparent, rgba(0, 210, 255, 0.75), transparent);
+            box-shadow: 0 0 8px rgba(0, 210, 255, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .info-note {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            line-height: 1.4;
+            margin-top: 10px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            background: var(--accent-color);
+            color: #000;
+        }
+
+        .system-info {
+            background-color: rgba(0, 210, 255, 0.08);
+            border-left: 3px solid var(--accent-color);
+            padding: 10px 15px;
+            border-radius: 0 6px 6px 0;
+            font-size: 0.85rem;
+            color: var(--text-main);
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-row">
+        <div>
+            <h1 id="title">Universal Macro & Stacking Helper</h1>
+            <div class="subtitle" id="subtitle">OM System, Sony, Nikon, Canon, Laowa & Sigma kalkulačka</div>
+        </div>
+        <div class="lang-switch">
+            <button class="lang-btn active" id="btn-cs" onclick="setLanguage('cs')">CZ</button>
+            <button class="lang-btn" id="btn-en" onclick="setLanguage('en')">EN</button>
+        </div>
+    </div>
+
+    <!-- Parameter Input -->
+    <div class="card">
+        <div class="card-title" id="sec-equipment">Nastavení techniky a scény</div>
+        <div class="grid">
+            <div class="form-group">
+                <label for="system" id="lbl-system">Systém / Značka</label>
+                <select id="system" onchange="updateLenses(); calculate();">
+                    <option value="om" selected>OM System / Olympus (Micro 4/3)</option>
+                    <option value="sony">Sony Alpha (Full-Frame)</option>
+                    <option value="nikon">Nikon Z (Full-Frame / APS-C)</option>
+                    <option value="canon">Canon EOS R (Full-Frame)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="lens" id="lbl-lens">Objektiv</label>
+                <select id="lens" onchange="calculate()">
+                    <!-- Populated dynamically -->
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="aperture" id="lbl-aperture">Clona (f/)</label>
+                <select id="aperture" onchange="calculate()">
+                    <option value="2.8">f/2.8</option>
+                    <option value="3.5" selected>f/3.5</option>
+                    <option value="4.0">f/4.0</option>
+                    <option value="5.6">f/5.6</option>
+                    <option value="8.0">f/8.0</option>
+                    <option value="11.0">f/11.0</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="magnification" id="lbl-magnification">Měřítko zvětšení</label>
+                <select id="magnification" onchange="calculate()">
+                    <option value="5.0">5:1 (Laowa Extreme Macro)</option>
+                    <option value="2.0">2:1 (S-Macro / Laowa 2X)</option>
+                    <option value="1.0" selected>1:1 (Životní velikost)</option>
+                    <option value="0.5">1:2 (Poloviční velikost)</option>
+                    <option value="0.25">1:4 (Detail / Květ)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid" style="margin-top: 15px;">
+            <div class="form-group">
+                <label for="subject-depth"><span id="lbl-subject-depth">Hloubka fotografovaného objektu</span>: <span id="depth-val" class="badge">5 mm</span></label>
+                <input type="range" id="subject-depth" min="1" max="50" value="5" oninput="calculate()">
+            </div>
+        </div>
+
+        <div class="system-info" id="system-feature-info">
+            <!-- Dynamic info about camera bracketing features -->
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="card">
+        <div class="card-title" id="sec-results">Výpočty hloubky ostrosti & Počet snímků</div>
+        <div class="results-grid">
+            <div class="result-box">
+                <div class="result-label" id="lbl-dof">DoF 1 snímku</div>
+                <div class="result-value" id="dof-value">0.24 mm</div>
+            </div>
+            <div class="result-box highlight">
+                <div class="result-label" id="lbl-est-shots">Potřebné snímky</div>
+                <div class="result-value" id="est-shots-value">32 fotek</div>
+            </div>
+            <div class="result-box">
+                <div class="result-label" id="lbl-eff-aperture">Efektivní clona</div>
+                <div class="result-value" id="eff-aperture">f/7.0</div>
+            </div>
+            <div class="result-box">
+                <div class="result-label" id="lbl-diffraction">Stav difrakce</div>
+                <div class="result-value" id="diffraction-status" style="font-size: 0.9rem; margin-top: 6px;">Ostré</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Focus Step Visualizer -->
+    <div class="card">
+        <div class="card-title" id="sec-simulator">Simulátor kroku posunu ostření (Focus Step / Differential)</div>
+        <div class="form-group">
+            <label for="step"><span id="lbl-step-setting">Nastavení kroku bracketingu (1–10)</span>: <span id="step-num" class="badge">Krok 3</span></label>
+            <input type="range" id="step" min="1" max="10" value="3" oninput="calculate()">
+        </div>
+
+        <div class="stack-visualizer">
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-sub);">
+                <span id="lbl-vis-title">Překrývání ostrých plátků (Schematicky)</span>
+                <span id="step-desc">Vyvážený krok pro makro</span>
+            </div>
+            <div class="layers-container" id="layers-box"></div>
+            <div class="info-note" id="step-recommendation"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentLang = 'cs';
+
+    const lensesData = {
+        om: [
+            { name: "OM SYSTEM 90mm f/3.5 Macro IS PRO (2:1)", value: "90" },
+            { name: "M.Zuiko 60mm f/2.8 Macro (1:1)", value: "60" },
+            { name: "M.Zuiko 30mm f/3.5 Macro (1:1)", value: "30" }
+        ],
+        sony: [
+            { name: "Sony FE 90mm f/2.8 Macro G OSS (1:1)", value: "90" },
+            { name: "Sigma 105mm f/2.8 DG DN Macro Art (1:1)", value: "105" },
+            { name: "Laowa 90mm f/2.8 2X Ultra Macro (2:1)", value: "laowa90" },
+            { name: "Laowa 24mm f/14 2X Probe Macro", value: "probe" }
+        ],
+        nikon: [
+            { name: "Nikon NIKKOR Z MC 105mm f/2.8 VR S (1:1)", value: "105" },
+            { name: "Sigma 105mm f/2.8 DG DN Macro Art (1:1)", value: "105" },
+            { name: "Laowa 90mm f/2.8 2X Ultra Macro (2:1)", value: "laowa90" },
+            { name: "Laowa 25mm f/2.8 2.5-5X Ultra Macro", value: "laowa25" }
+        ],
+        canon: [
+            { name: "Canon RF 100mm f/2.8L Macro IS USM (1.4:1)", value: "100" },
+            { name: "Sigma 105mm f/2.8 DG DN Macro Art (1:1)", value: "105" },
+            { name: "Laowa 90mm f/2.8 2X Ultra Macro (2:1)", value: "laowa90" }
+        ]
+    };
+
+    const translations = {
+        cs: {
+            title: "Universal Macro & Stacking Helper",
+            subtitle: "OM System, Sony, Nikon, Canon, Laowa & Sigma kalkulačka",
+            secEquipment: "Nastavení techniky a scény",
+            lblSystem: "Systém / Značka",
+            lblLens: "Objektiv",
+            lblAperture: "Clona (f/)",
+            lblMagnification: "Měřítko zvětšení",
+            lblSubjectDepth: "Hloubka fotografovaného objektu",
+            secResults: "Výpočty hloubky ostrosti & Počet snímků",
+            lblDof: "DoF 1 snímku",
+            lblEstShots: "Potřebné snímky",
+            lblEffAperture: "Efektivní clona",
+            lblDiffraction: "Stav difrakce",
+            secSimulator: "Simulátor kroku posunu ostření (Focus Step / Differential)",
+            lblStepSetting: "Nastavení kroku bracketingu (1–10)",
+            lblVisTitle: "Překrývání ostrých plátků (Schematicky)",
+            diffSharp: "✨ Maximální ostrost",
+            diffMild: "⚡ Mírná difrakce",
+            diffSevere: "⚠️ Viditelná difrakce",
+            shotsUnit: "fotek",
+            features: {
+                om: "<b>OM System / Olympus:</b> Podporuje In-Camera Focus Stacking (fotoaparát fotku rovnou složí) i Bracketing.",
+                sony: "<b>Sony Alpha:</b> Podporuje Focus Bracketing (automatická série snímků). Skládání se provádí v počítači (např. Helicon Focus / Photoshop).",
+                nikon: "<b>Nikon Z:</b> Podporuje Focus Shifting (automatické ostření a posun). Skládání se provádí v počítači.",
+                canon: "<b>Canon EOS / R:</b> Podporuje Focus Bracketing a vestavěný Depth Compositing u vybraných těles."
+            },
+            stepDescs: {
+                fine: "Extrémně jemný posun (Vysoké překrytí)",
+                optimal: "Optimální zlatý střed",
+                wide: "Širší skoky",
+                coarse: "Velmi hrubý posun (Riziko mezer)"
+            },
+            stepRecs: {
+                fine: "<b>Doporučení:</b> Nutnost pro vysoké makro (1:1 a více). Zajišťuje dokonalou návaznost pro detailní textury hmyzu nebo materiálů.",
+                optimal: "<b>Doporučení:</b> Nejlepší výchozí nastavení pro běžné makro (květy, houby). Spolehlivá ostrost celé série.",
+                wide: "<b>Doporučení:</b> Vhodné pro menší zvětšení (1:4) nebo když potřebujete sérii nafotit bleskurychle (např. při mírném vánku).",
+                coarse: "<b>Doporučení:</b> Pro detailní makro nevhodné (vzniknou neostré pruhy). Vhodné pro širší krajinářský bracketing."
+            }
+        },
+        en: {
+            title: "Universal Macro & Stacking Helper",
+            subtitle: "OM System, Sony, Nikon, Canon, Laowa & Sigma calculator",
+            secEquipment: "Gear & Scene Settings",
+            lblSystem: "Camera System",
+            lblLens: "Lens",
+            lblAperture: "Aperture (f/)",
+            lblMagnification: "Magnification Ratio",
+            lblSubjectDepth: "Subject Depth (Thickness)",
+            secResults: "Depth of Field & Frame Count Results",
+            lblDof: "Single Frame DoF",
+            lblEstShots: "Estimated Shots",
+            lblEffAperture: "Effective Aperture",
+            lblDiffraction: "Diffraction Status",
+            secSimulator: "Focus Step / Differential Simulator",
+            lblStepSetting: "Bracketing Step Setting (1–10)",
+            lblVisTitle: "Sharp Layer Overlap (Schematic)",
+            diffSharp: "✨ Maximum Sharpness",
+            diffMild: "⚡ Mild Diffraction",
+            diffSevere: "⚠️ Visible Diffraction",
+            shotsUnit: "shots",
+            features: {
+                om: "<b>OM System / Olympus:</b> Features In-Camera Focus Stacking (merging images internally) and Bracketing.",
+                sony: "<b>Sony Alpha:</b> Features Focus Bracketing (automated burst). Image stacking is done in post-processing software.",
+                nikon: "<b>Nikon Z:</b> Features Focus Shifting shooting mode. Post-processing stacking required.",
+                canon: "<b>Canon EOS R:</b> Features Focus Bracketing and in-camera depth compositing on select models."
+            },
+            stepDescs: {
+                fine: "Extremely fine shift (High overlap)",
+                optimal: "Optimal sweet spot",
+                wide: "Wider steps",
+                coarse: "Coarse steps (Gaps risk)"
+            },
+            stepRecs: {
+                fine: "<b>Recommendation:</b> Essential for high macro ratios (1:1+). Ensures smooth blending for fine insect details.",
+                optimal: "<b>Recommendation:</b> Best default setting for general macro (flowers, fungi). Reliable continuous sharpness.",
+                wide: "<b>Recommendation:</b> Suitable for lower magnification (1:4) or quick shooting when subjects sway.",
+                coarse: "<b>Recommendation:</b> Unsuitable for close macro (gap risk). Better for wide landscape bracketing."
+            }
+        }
+    };
+
+    function updateLenses() {
+        const system = document.getElementById('system').value;
+        const lensSelect = document.getElementById('lens');
+        lensSelect.innerHTML = '';
+
+        lensesData[system].forEach(lens => {
+            const opt = document.createElement('option');
+            opt.value = lens.value;
+            opt.innerText = lens.name;
+            lensSelect.appendChild(opt);
+        });
+
+        document.getElementById('system-feature-info').innerHTML = translations[currentLang].features[system];
+    }
+
+    function setLanguage(lang) {
+        currentLang = lang;
+        document.getElementById('btn-cs').classList.toggle('active', lang === 'cs');
+        document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+
+        const t = translations[lang];
+        document.getElementById('title').innerText = t.title;
+        document.getElementById('subtitle').innerText = t.subtitle;
+        document.getElementById('sec-equipment').innerText = t.secEquipment;
+        document.getElementById('lbl-system').innerText = t.lblSystem;
+        document.getElementById('lbl-lens').innerText = t.lblLens;
+        document.getElementById('lbl-aperture').innerText = t.lblAperture;
+        document.getElementById('lbl-magnification').innerText = t.lblMagnification;
+        document.getElementById('lbl-subject-depth').innerText = t.lblSubjectDepth;
+        document.getElementById('sec-results').innerText = t.secResults;
+        document.getElementById('lbl-dof').innerText = t.lblDof;
+        document.getElementById('lbl-est-shots').innerText = t.lblEstShots;
+        document.getElementById('lbl-eff-aperture').innerText = t.lblEffAperture;
+        document.getElementById('lbl-diffraction').innerText = t.lblDiffraction;
+        document.getElementById('sec-simulator').innerText = t.secSimulator;
+        document.getElementById('lbl-step-setting').innerText = t.lblStepSetting;
+        document.getElementById('lbl-vis-title').innerText = t.lblVisTitle;
+
+        document.getElementById('system-feature-info').innerHTML = t.features[document.getElementById('system').value];
+
+        calculate();
+    }
+
+    function calculate() {
+        const system = document.getElementById('system').value;
+        const aperture = parseFloat(document.getElementById('aperture').value);
+        const mag = parseFloat(document.getElementById('magnification').value);
+        const step = parseInt(document.getElementById('step').value);
+        const subjectDepth = parseFloat(document.getElementById('subject-depth').value);
+
+        const t = translations[currentLang];
+        document.getElementById('depth-val').innerText = subjectDepth + ' mm';
+
+        // Circle of Confusion based on sensor size (M4/3 vs Full Frame)
+        // M4/3 CoC = 0.015 mm, Full Frame CoC = 0.030 mm
+        const coc = (system === 'om') ? 0.015 : 0.030;
+
+        // Effective Aperture
+        const effAperture = aperture * (1 + mag);
+        document.getElementById('eff-aperture').innerText = 'f/' + effAperture.toFixed(1);
+
+        // DoF calculation (mm)
+        let dof = (2 * coc * effAperture) / (mag * mag);
+        document.getElementById('dof-value').innerText = dof < 1 ? dof.toFixed(2) + ' mm' : dof.toFixed(1) + ' mm';
+
+        // Overlap factor based on Step
+        const stepFactor = 1 - (step * 0.08); 
+        const effectiveStepDoF = Math.max(dof * 0.2, dof * stepFactor);
+        
+        // Estimated Shots Needed
+        let estimatedShots = Math.ceil(subjectDepth / effectiveStepDoF) + 2;
+        document.getElementById('est-shots-value').innerText = estimatedShots + ' ' + t.shotsUnit;
+
+        // Diffraction Status
+        const diffStatus = document.getElementById('diffraction-status');
+        const diffractionLimit = (system === 'om') ? 8 : 13; // M4/3 diffraction hits earlier
+        
+        if (aperture >= diffractionLimit) {
+            diffStatus.innerText = t.diffSevere;
+            diffStatus.style.color = "#ff4d4d";
+        } else if (aperture >= (diffractionLimit - 2)) {
+            diffStatus.innerText = t.diffMild;
+            diffStatus.style.color = "#ffaa00";
+        } else {
+            diffStatus.innerText = t.diffSharp;
+            diffStatus.style.color = "#00d2ff";
+        }
+
+        // Update Step Visualizer
+        document.getElementById('step-num').innerText = (currentLang === 'cs' ? 'Krok ' : 'Step ') + step;
+        
+        const layersBox = document.getElementById('layers-box');
+        layersBox.innerHTML = '';
+
+        const desc = document.getElementById('step-desc');
+        const rec = document.getElementById('step-recommendation');
+
+        const numLayers = 7;
+        for (let i = 0; i < numLayers; i++) {
+            const layer = document.createElement('div');
+            layer.className = 'layer';
+            const width = Math.min(100, 40 + (step * 5));
+            const offset = (i * (step * 3.5));
+            layer.style.width = width + '%';
+            layer.style.marginLeft = Math.min(offset, 100 - width) + '%';
+            layer.style.opacity = (1 - (i * 0.1)).toString();
+            layersBox.appendChild(layer);
+        }
+
+        if (step <= 2) {
+            desc.innerText = t.stepDescs.fine;
+            rec.innerHTML = t.stepRecs.fine;
+        } else if (step <= 5) {
+            desc.innerText = t.stepDescs.optimal;
+            rec.innerHTML = t.stepRecs.optimal;
+        } else if (step <= 8) {
+            desc.innerText = t.stepDescs.wide;
+            rec.innerHTML = t.stepRecs.wide;
+        } else {
+            desc.innerText = t.stepDescs.coarse;
+            rec.innerHTML = t.stepRecs.coarse;
+        }
+    }
+
+    // Initialize lenses on load
+    updateLenses();
+</script>
+
+</body>
+</html>
+
